@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CrapSDK Sensor Testbench</title>
+  <style>
+    body {
+      font-family: -apple-system, sans-serif;
+      padding: 20px;
+      background: #121212;
+      color: #fff;
+    }
+
+    button {
+      background: #007aff;
+      color: white;
+      border: none;
+      padding: 15px 25px;
+      font-size: 16px;
+      border-radius: 8px;
+      width: 100%;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: #1e1e1e;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
+    .val {
+      font-size: 1.5em;
+      font-weight: bold;
+      color: #00ff66;
+    }
+
+    #log {
+      font-family: monospace;
+      font-size: 12px;
+      background: #000;
+      padding: 10px;
+      border-radius: 5px;
+      height: 150px;
+      overflow-y: scroll;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>💩 CrapSDK Data Logger</h1>
+  <button id="startBtn">Grant Permissions & Start</button>
+
+  <div class="card">
+    <div>Phone Tilt (Beta Pitch): <span id="beta" class="val">0</span>°</div>
+    <small>Target on toilet: ~30° to 50°</small>
+  </div>
+
+  <div class="card">
+    <div>Total Acceleration: <span id="accel" class="val">0</span> m/s²</div>
+    <small>Target on toilet: ~9.8 (Gravity only, near zero motion)</small>
+  </div>
+
+  <h3>Event Log:</h3>
+  <div id="log">Waiting for permissions...<br></div>
+
+  <script>
+    const startBtn = document.getElementById('startBtn');
+    const betaEl = document.getElementById('beta');
+    const accelEl = document.getElementById('accel');
+    const logEl = document.getElementById('log');
+
+    function log(msg) {
+      logEl.innerHTML += `> ${msg}<br>`;
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    // iOS requires explicit permission via a user gesture (button click)
+    async function initSensors() {
+      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        try {
+          const permission = await DeviceOrientationEvent.requestPermission();
+          if (permission === 'granted') {
+            attachListeners();
+          } else {
+            log('Permission denied by user.');
+          }
+        } catch (e) {
+          log('Error requesting permission: ' + e.message);
+        }
+      } else {
+        // Android / Non-iOS
+        attachListeners();
+      }
+    }
+
+    function attachListeners() {
+      log('Sensors active! Gathering telemetry...');
+      startBtn.style.display = 'none';
+
+      // Orientation (Tilt)
+      window.addEventListener('deviceorientation', (event) => {
+        // 'beta' is front-to-back tilt in degrees (-180 to 180)
+        const beta = event.beta ? event.beta.toFixed(1) : 0;
+        betaEl.innerText = beta;
+      });
+
+      // Motion (Accelerometer)
+      window.addEventListener('devicemotion', (event) => {
+        const acc = event.accelerationIncludingGravity;
+        if (acc) {
+          // Calculate magnitude of acceleration vector sqrt(x^2 + y^2 + z^2)
+          const magnitude = Math.sqrt(acc.x ** 2 + acc.y ** 2 + acc.z ** 2).toFixed(2);
+          accelEl.innerText = magnitude;
+        }
+      });
+    }
+
+    startBtn.addEventListener('click', initSensors);
+  </script>
+</body>
+
+</html>
