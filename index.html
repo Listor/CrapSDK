@@ -213,7 +213,6 @@
       statusEl.innerText = `🔴 RECORDING [${labelSelect.value}]...`;
       statusEl.style.color = '#ff3b30';
 
-      // Record telemetry every 100ms (10 samples per second)
       recordingTimer = setInterval(() => {
         const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
 
